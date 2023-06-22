@@ -2868,6 +2868,14 @@ static int move_lines(buf_T *frombuf, buf_T *tobuf)
   return retval;
 }
 
+enum reload_changed_buf {
+  RELOAD_CHANGED_BUF_NONE,
+  RELOAD_CHANGED_BUF_NORMAL,
+  RELOAD_CHANGED_BUF_DETECT,
+};
+
+static enum reload_changed_buf auto_reload = RELOAD_CHANGED_BUF_NONE;
+
 /// Check if buffer "buf" has been changed.
 /// Also check if the file for a new buffer unexpectedly appeared.
 ///
@@ -2882,11 +2890,7 @@ int buf_check_timestamp(buf_T *buf)
   char *mesg2 = "";
   bool helpmesg = false;
 
-  enum {
-    RELOAD_NONE,
-    RELOAD_NORMAL,
-    RELOAD_DETECT,
-  } reload = RELOAD_NONE;
+  enum reload_changed_buf reload = RELOAD_CHANGED_BUF_NONE;
 
   bool can_reload = false;
   uint64_t orig_size = buf->b_orig_size;
@@ -2937,7 +2941,7 @@ int buf_check_timestamp(buf_T *buf)
       // If 'autoread' is set, the buffer has no changes and the file still
       // exists, reload the buffer.  Use the buffer-local option value if it
       // was set, the global option value otherwise.
-      reload = RELOAD_NORMAL;
+      reload = RELOAD_CHANGED_BUF_NORMAL;
     } else {
       char *reason;
       if (!file_info_ok) {
@@ -2968,9 +2972,9 @@ int buf_check_timestamp(buf_T *buf)
         }
         char *s = get_vim_var_str(VV_FCS_CHOICE);
         if (strcmp(s, "reload") == 0 && *reason != 'd') {
-          reload = RELOAD_NORMAL;
+          reload = RELOAD_CHANGED_BUF_NORMAL;
         } else if (strcmp(s, "edit") == 0) {
-          reload = RELOAD_DETECT;
+          reload = RELOAD_CHANGED_BUF_DETECT;
         } else if (strcmp(s, "ask") == 0) {
           n = false;
         } else {
@@ -3035,13 +3039,20 @@ int buf_check_timestamp(buf_T *buf)
         xstrlcat(tbuf, mesg2, tbuf_len - 1);
       }
       switch (do_dialog(VIM_WARNING, _("Warning"), tbuf,
-                        _("&OK\n&Load File\nLoad File &and Options"),
+                        _("&OK\n&Load File\n&Load File &and Options\nAlways Load &File\n"
+                          "Always Load File and &Options"),
                         1, NULL, true)) {
       case 2:
-        reload = RELOAD_NORMAL;
+        reload = RELOAD_CHANGED_BUF_NORMAL;
         break;
       case 3:
-        reload = RELOAD_DETECT;
+        reload = RELOAD_CHANGED_BUF_DETECT;
+        break;
+      case 4:
+        auto_reload = RELOAD_CHANGED_BUF_NORMAL;
+        break;
+      case 5:
+        auto_reload = RELOAD_CHANGED_BUF_DETECT;
         break;
       }
     } else if (State > MODE_NORMAL_BUSY || (State & MODE_CMDLINE) || already_warned) {
@@ -3076,9 +3087,10 @@ int buf_check_timestamp(buf_T *buf)
     xfree(tbuf);
   }
 
-  if (reload != RELOAD_NONE) {
+  if (auto_reload != RELOAD_CHANGED_BUF_NONE || reload != RELOAD_CHANGED_BUF_NONE) {
     // Reload the buffer.
-    buf_reload(buf, orig_mode, reload == RELOAD_DETECT);
+    buf_reload(buf, orig_mode, auto_reload == RELOAD_CHANGED_BUF_DETECT
+        || reload == RELOAD_CHANGED_BUF_DETECT);
     if (buf->b_p_udf && buf->b_ffname != NULL) {
       uint8_t hash[UNDO_HASH_SIZE];
 
