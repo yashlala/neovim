@@ -1673,8 +1673,9 @@ bool apply_autocmds_group(event_T event, char *fname, char *fname_io, bool force
         || event == EVENT_QUICKFIXCMDPRE || event == EVENT_REMOTEREPLY
         || event == EVENT_SIGNAL || event == EVENT_SPELLFILEMISSING
         || event == EVENT_SYNTAX || event == EVENT_TABCLOSED
-        || event == EVENT_USER || event == EVENT_WINCLOSED
-        || event == EVENT_WINRESIZED || event == EVENT_WINSCROLLED) {
+        || event == EVENT_TABMOVED || event == EVENT_USER
+        || event == EVENT_WINCLOSED || event == EVENT_WINRESIZED
+        || event == EVENT_WINSCROLLED) {
       fname = xstrdup(fname);
       autocmd_fname_full = true;  // don't expand it later
     } else {
