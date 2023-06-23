@@ -4619,7 +4619,7 @@ void tabpage_move(int nr)
 
   char tabid[NUMBUFLEN];
   vim_snprintf(tabid, sizeof(tabid), "%d", nr_dest);
-  apply_autocmds(EVENT_TABMOVED, tabid, NULL, false, curbuf);
+  apply_autocmds(EVENT_TABMOVED, tabid, tabid, false, curbuf);
 }
 
 // Go to another window.
