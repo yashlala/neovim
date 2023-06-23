@@ -4573,11 +4573,12 @@ void tabpage_move(int nr)
     return;
   }
 
-  int n = 1;
+  int nr_dest = 1;
   tabpage_T *tp;
 
-  for (tp = first_tabpage; tp->tp_next != NULL && n < nr; tp = tp->tp_next) {
-    n++;
+  for (tp = first_tabpage; tp->tp_next != NULL && nr_dest < nr;
+       tp = tp->tp_next) {
+    nr_dest++;
   }
 
   if (tp == curtab || (nr > 0 && tp->tp_next != NULL
@@ -4615,6 +4616,11 @@ void tabpage_move(int nr)
 
   // Need to redraw the tabline.  Tab page contents doesn't change.
   redraw_tabline = true;
+
+  char tabid[NUMBUFLEN];
+  vim_snprintf(tabid, sizeof(tabid), "%d", nr_dest);
+  // TODO(yash): I'm pretty sure curtab->tp_curwin->w_buffer is always "curbuf"
+  apply_autocmds(EVENT_TABMOVED, tabid, tabid, false, curtab->tp_curwin->w_buffer);
 }
 
 // Go to another window.
