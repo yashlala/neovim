@@ -4619,8 +4619,7 @@ void tabpage_move(int nr)
 
   char tabid[NUMBUFLEN];
   vim_snprintf(tabid, sizeof(tabid), "%d", nr_dest);
-  // TODO(yash): I'm pretty sure curtab->tp_curwin->w_buffer is always "curbuf"
-  apply_autocmds(EVENT_TABMOVED, tabid, tabid, false, curtab->tp_curwin->w_buffer);
+  apply_autocmds(EVENT_TABMOVED, tabid, NULL, false, curbuf);
 }
 
 // Go to another window.
