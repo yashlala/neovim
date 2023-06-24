@@ -1,38 +1,38 @@
 local helpers = require('test.functional.helpers')(after_each)
 local clear, nvim, eq = helpers.clear, helpers.nvim, helpers.eq
-local next_msg = helpers.next_msg
+local command = helpers.command
+local eval = helpers.eval
 
 describe('autocmd TabMoved * ', function()
   before_each(clear)
 
-  -- We should also be able to trigger this event via mouse movements. I'm not sure how to do
-  -- that. TODO(yashlala): add mouse tests.
   it('matches when moving any tab via :tabmove', function()
-    nvim('command', 'au! TabMoved * echom "tabmoved:".expand("<afile>").":".expand("<amatch>").":".tabpagenr()')
+    command('au! TabMoved * echom "tabmoved:".tabpagenr()')
     repeat
-      nvim('command', 'tabnew')
+      command('tabnew')
     until nvim('eval', 'tabpagenr()') == 3 -- current tab is now 3
-    eq("tabmoved:1:1:1", nvim('exec', 'tabmove 0', true)) -- move after 0, current tab is now 1
-    nvim('command', 'tabnext 2') -- move to the second tab
-    eq("tabmoved:3:3:3", nvim('exec', 'tabmove $', true)) -- move tab to end, current tab is now 3
-    eq("tabmoved:2:2:2", nvim('exec', 'tabmove -1', true)) -- move tab 1 down, current tab is now 2
+    eq("tabmoved:1", nvim('exec', 'tabmove 0', true))
+    command('tabnext 2') -- current tab is now 2
+    eq("tabmoved:3", nvim('exec', 'tabmove $', true))
+    eq("tabmoved:2", nvim('exec', 'tabmove -1', true))
   end)
 
   it('does not trigger when a tab is moved to the same page number', function()
-    nvim('command', 'au! TabMoved * echom "tabmoved:".expand("<afile>").":".expand("<amatch>").":".tabpagenr()')
+    command('let g:test = 0')
+    command('au! TabMoved * let g:test += 1')
     repeat
-      nvim('command', 'tabnew')
+      command('tabnew')
     until nvim('eval', 'tabpagenr()') == 3 -- current tab is now 3
-    nvim('command', 'tabmove $')
-    -- TODO(yashlala): Is there a better way to detect "no input" than via timeout?
-    eq(nil, next_msg(200))
+    command('tabmove $')
+    eq(0, eval('g:test'))
   end)
 
   it('is not triggered when tabs are created or closed', function()
-    nvim('command', 'au! TabMoved * echom "tabmoved:".expand("<afile>").":".expand("<amatch>").":".tabpagenr()')
-    nvim('command', 'file Xtestfile1')
-    nvim('command', '0tabedit Xtestfile2')
-    nvim('command', 'tabclose')
-    eq(nil, next_msg(200))
+    command('let g:test = 0')
+    command('au! TabMoved * let g:test += 1')
+    command('file Xtestfile1')
+    command('0tabedit Xtestfile2')
+    command('tabclose')
+    eq(0, eval('g:test'))
   end)
 end)
