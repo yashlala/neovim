@@ -40,16 +40,22 @@ describe('autocmd TabMoved', function()
   end)
 
   describe('with NR as <amatch>', function()
-    it('matches when closing a tab whose index is NR', function()
+    it('matches when moving a tab to index NR', function()
       nvim('command', 'au! TabMoved * echom "tabmoved:".expand("<afile>").":".expand("<amatch>").":".tabpagenr()')
       nvim('command', 'au! TabMoved 2 echom "tabmoved:match"')
       repeat
         nvim('command',  'tabnew')
       until nvim('eval', 'tabpagenr()') == 4 -- current tab is now 4
-      -- sanity check, we shouldn't match on target page numbers != 2
-      eq("tabmoved:1:1:1", nvim('exec', 'tabmove 0', true)) -- current tab is now 1
-      nvim('command', '3tabnext')
       eq("tabmoved:2:2:2\ntabmoved:match", nvim('exec', 'tabmove 1', true))
+    end)
+
+    it("doesn't match when moving a tab to a non-NR index", function()
+      nvim('command', 'au! TabMoved * echom "tabmoved:".expand("<afile>").":".expand("<amatch>").":".tabpagenr()')
+      nvim('command', 'au! TabMoved 2 echom "tabmoved:match"')
+      repeat
+        nvim('command',  'tabnew')
+      until nvim('eval', 'tabpagenr()') == 4 -- current tab is now 4
+      eq("tabmoved:1:1:1", nvim('exec', 'tabmove 0', true)) -- current tab is now 1
     end)
   end)
 end)
