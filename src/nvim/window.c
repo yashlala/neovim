@@ -4617,9 +4617,7 @@ void tabpage_move(int nr)
   // Need to redraw the tabline.  Tab page contents doesn't change.
   redraw_tabline = true;
 
-  char tabid[NUMBUFLEN];
-  vim_snprintf(tabid, sizeof(tabid), "%d", nr_dest);
-  apply_autocmds(EVENT_TABMOVED, tabid, tabid, false, curbuf);
+  apply_autocmds(EVENT_TABMOVED, NULL, NULL, false, curbuf);
 }
 
 // Go to another window.
